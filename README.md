@@ -1,44 +1,103 @@
-# SwiftGodot Apple Sign-In Library ✨
-
+SwiftGodot Apple Sign-In Library ✨
 <div align="center">
-  
-  ![Swift](https://img.shields.io/badge/Swift-FA7343?style=for-the-badge&logo=swift&logoColor=white)
-  ![Godot](https://img.shields.io/badge/Godot-478CBF?style=for-the-badge&logo=GodotEngine&logoColor=white)
-  ![iOS](https://img.shields.io/badge/iOS-000000?style=for-the-badge&logo=ios&logoColor=white)
-  
-  **A lightweight, easy-to-integrate library for implementing Apple Sign-In with Firebase in Godot 4.3+ on iOS**
+Swift
+Godot
+iOS
+
+A lightweight, easy-to-integrate library for implementing Apple Sign-In with Firebase in Godot 4.3+ on iOS
+
 </div>
+🚀 Step-by-Step Process
+1. Set Up Your Xcode Project
+Create a new Swift Package in Xcode.
 
-## 📂 Project Structure
+Add dependencies for Firebase and SwiftGodot.
 
-```
-Bin/
-  ios/
-    MyLibrary.framework/
-      Info.plist
-      MyLibrary
-    SwiftGodot.framework/
-      Info.plist
-      SwiftGodot
-```
+Enable Apple Sign-In in your Xcode project:
 
-## 🛠️ Building the Framework (Already built in `Bin/ios/`, if missing, follow below steps)
+Go to your project settings.
 
-To build the framework, run the following commands:
+Under Signing & Capabilities, add Sign In with Apple.
 
-```sh
+Add the GoogleService-Info.plist file to your Xcode project (required for Firebase).
+
+2. Write the Swift Code
+Create a Swift class to handle Apple Sign-In and Firebase authentication.
+
+Use SwiftGodot to expose methods and signals to Godot.
+
+Example Swift Code:
+swift
+Copy
+import Foundation
+import SwiftGodot
+import FirebaseAuth
+import AuthenticationServices
+
+@Godot
+class MyLibrary: Object {
+    private var currentNonce: String?
+
+    @Callable
+    func signIn() {
+        let nonce = randomNonceString()
+        currentNonce = nonce
+        let appleIDProvider = ASAuthorizationAppleIDProvider()
+        let request = appleIDProvider.createRequest()
+        request.requestedScopes = [.fullName, .email]
+        request.nonce = sha256(nonce)
+
+        let authorizationController = ASAuthorizationController(authorizationRequests: [request])
+        authorizationController.delegate = self
+        authorizationController.performRequests()
+    }
+
+    @Callable
+    func signOut() {
+        do {
+            try Auth.auth().signOut()
+            emitSignal("Signout", "User signed out")
+        } catch {
+            emitSignal("Output", "Error: \(error.localizedDescription)")
+        }
+    }
+
+    private func randomNonceString(length: Int = 32) -> String {
+        // Generate a random nonce string
+    }
+
+    private func sha256(_ input: String) -> String {
+        // Compute SHA256 hash
+    }
+}
+
+extension MyLibrary: ASAuthorizationControllerDelegate {
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+        // Handle Apple Sign-In success
+    }
+
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        // Handle Apple Sign-In error
+    }
+}
+3. Build the Framework
+Use the provided build.sh script to compile your Swift code into a .framework file.
+
+Run the following commands in your terminal:
+
+sh
+Copy
 chmod +x build.sh
 ./build.sh ios release
-```
+The compiled framework will be available in the Bin/ios/ directory.
 
-After running the script, you will find the built files inside the `Bin/` directory.
+4. Set Up in Godot
+Create a new file named MyLibrary.gdextension in your Godot project's root directory (res://).
 
-## 🔗 Setting Up in Godot
+Add the following content to the file:
 
-1. **Create a new file named `MyLibrary.gdextension` in the root directory (`res://`).**
-2. Paste the following content into the file:
-
-```ini
+ini
+Copy
 [configuration]
 entry_symbol = "swift_entry_point"
 compatibility_minimum = "4.3"
@@ -48,208 +107,93 @@ ios.release = "res://Bin/ios/MyLibrary.framework"
 
 [dependencies]
 ios.release = {"res://Bin/ios/SwiftGodot.framework" : ""}
-```
+Copy the .framework files from Bin/ios/ to your Godot project's res://Bin/ios/ directory.
 
-### 📌 Important:
-- **This file is required to link Godot to iOS.**
-- Copy the framework files into `res://Bin/ios/` before running Godot.
+5. Write the Godot Script
+Use the following GDScript to integrate Apple Sign-In into your Godot project.
 
-## ⚠️ MUST INCLUDE GOOGLE SERVICE INFO PLIST
-
-**Make sure to include `GoogleService-Info.plist` in your Xcode project.**
-
-This is required for Firebase authentication integration with Apple Sign-In.
-
-## 🔐 Xcode Setup
-
-- Ensure **Apple Login** is added in Xcode.
-- You **must have an Apple Developer account** to use Apple Sign-In with Firebase.
-
-## 🔋 Godot Script Example
-
-Here's a sample **Godot script (`GDScript`)** demonstrating how to use Apple Sign-In:
-
+Example Godot Script:
+gdscript
+Copy
 extends Control
 
 @onready var apple_button = $Panel/AppleLoginButton
-@onready var back_button = $Panel/MarginContainer2/HBoxContainer/GoBackButton
 @onready var error_label = $Panel/MarginContainer/ErrorLabel
 @onready var status_label = $Panel/StatusLabel
 @onready var loading_indicator = $Panel/LoadingIndicator
 
-@onready var http_request = $HTTPRequest
-
-# File path for saving demo user data (temporary location)
-const DEMO_USER_DATA_FILE := "user://demo_user_data.json"
+var my_library = null
 
 func _ready() -> void:
-	# Initially hide status elements
-	error_label.hide()
-	if loading_indicator:
-		loading_indicator.hide()
-	
-	# Connect signals
-	http_request.request_completed.connect(_on_http_request_completed)
-	apple_button.pressed.connect(_on_apple_button_pressed)
-	back_button.pressed.connect(_on_go_back_button_pressed)
+    error_label.hide()
+    if loading_indicator:
+        loading_indicator.hide()
+
+    # Initialize the plugin
+    if ClassDB.class_exists("MyLibrary"):
+        my_library = ClassDB.instantiate("MyLibrary")
+        my_library.connect("Output", _on_apple_output_signal)
+        my_library.connect("Signout", _on_apple_signout_signal)
+    else:
+        error_label.show()
+        error_label.text = "Apple Sign-In unavailable"
 
 func _on_apple_button_pressed() -> void:
-	# Simulate a button click sound (for demo purposes)
-	print("Apple button pressed")
-	
-	# Show loading indicator
-	if loading_indicator:
-		loading_indicator.show()
-	
-	# Hide error label
-	error_label.hide()
-	
-	# Simulate Apple Sign-In process
-	simulate_apple_sign_in()
+    if loading_indicator:
+        loading_indicator.show()
+    error_label.hide()
 
-func simulate_apple_sign_in() -> void:
-	# Simulate a successful Apple Sign-In with dummy data
-	var dummy_user_data = {
-		"user_id": "demo_user_123",
-		"email": "demo_user@example.com",
-		"name": "Demo User",
-		"id_token": "dummy_id_token_123"
-	}
-	
-	# Process the dummy user data
-	_process_demo_user_data(dummy_user_data)
+    if my_library:
+        my_library.signIn()
+    else:
+        show_error("Apple plugin not initialized")
 
-func _process_demo_user_data(user_data: Dictionary) -> void:
-	# Simulate processing user data (e.g., sending to a server)
-	print("Processing demo user data:", user_data)
-	
-	# Save the dummy user data to a file
-	save_demo_user_data(user_data)
-	
-	# Show a success message
-	show_status("Demo login successful!")
+func _on_apple_output_signal(output: String) -> void:
+    if loading_indicator:
+        loading_indicator.hide()
 
-func save_demo_user_data(user_data: Dictionary) -> void:
-	# Save the user data to a temporary file for demonstration purposes
-	var file = FileAccess.open(DEMO_USER_DATA_FILE, FileAccess.WRITE)
-	if file:
-		var json_string = JSON.stringify(user_data, "  ")
-		file.store_string(json_string)
-		print("Demo user data saved to:", DEMO_USER_DATA_FILE)
-	else:
-		push_error("Failed to save demo user data")
+    if output.begins_with("Error:"):
+        show_error(output)
+    else:
+        show_status(output)
 
-func load_demo_user_data() -> Dictionary:
-	# Load the demo user data from the temporary file
-	if not FileAccess.file_exists(DEMO_USER_DATA_FILE):
-		print("No demo user data found")
-		return {}
-	
-	var file = FileAccess.open(DEMO_USER_DATA_FILE, FileAccess.READ)
-	if file:
-		var json_string = file.get_as_text()
-		var json = JSON.new()
-		var parse_result = json.parse(json_string)
-		
-		if parse_result == OK:
-			var data = json.get_data()
-			print("Demo user data loaded:", data)
-			return data
-		else:
-			push_error("Failed to parse demo user data")
-	else:
-		push_error("Failed to open demo user data file")
-	
-	return {}
-
-func _on_http_request_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray) -> void:
-	# Handle HTTP request completion (for demo purposes)
-	if loading_indicator:
-		loading_indicator.hide()
-	
-	if result == HTTPRequest.RESULT_SUCCESS and response_code == 200:
-		print("HTTP request successful")
-		show_status("Server verification complete!")
-	else:
-		show_error("HTTP request failed")
+func _on_apple_signout_signal(signout: String) -> void:
+    show_status(signout)
 
 func show_error(message: String) -> void:
-	# Show an error message
-	if loading_indicator:
-		loading_indicator.hide()
-	error_label.show()
-	error_label.text = message
-	print("Error:", message)
+    error_label.show()
+    error_label.text = message
 
 func show_status(message: String) -> void:
-	# Show a status message
-	if status_label:
-		status_label.text = message
-		status_label.show()
-	print("Status:", message)
+    status_label.text = message
+    status_label.show()
+6. Rebuild & Update the Plugin
+If you modify the Swift code, rebuild the framework using the build.sh script.
 
-func _on_go_back_button_pressed() -> void:
-	# Simulate a button click sound (for demo purposes)
-	print("Go back button pressed")
-	
-	# Hide the current panel (for demo purposes)
-	$Panel.hide()
+Copy the updated .framework files to your Godot project.
 
-## 🔄 Rebuilding & Updating the Plugin
+🌟 Features
+Apple Sign-In with Firebase for Godot 4.3+.
 
-If you modify the Swift code, follow these steps to rebuild and update:
+Easy integration with Godot via GDExtension.
 
-```sh
-chmod +x build.sh
-./build.sh ios release
-```
+Seamless authentication flow with signals for success and error handling.
 
-Then, copy the updated files from `Bin/` to your Godot project and repeat the setup process.
+Optimized for iOS with minimal setup.
 
-## 🌟 Features
+🙌 Acknowledgements
+SwiftGodot for bridging Swift and Godot.
 
-- Apple Sign-In with Firebase for Godot 4.3+
-- Easy integration
-- Seamless authentication flow
-- Simple signals for handling authentication results
-- Optimized for iOS
+Firebase for authentication services.
 
-## 🙌 Acknowledgements
+Apple for Sign In with Apple.
 
+🎮 Try My Games!
+<div align="center"> <h1>See this plugin in action and support my work!</h1> <table> <tr> <td align="center"> <img src="https://play-lh.googleusercontent.com/l-usbpBq0OuurA1e9FJSlnnVVa1HQpcUCMv_RlM63zk7jGUvXRC10Z9hDuqA83DTU6A=w240-h480-rw" width="120" height="120"><br> <b>Ludo World War</b><br> <a href="https://apps.apple.com/np/app/ludo-app-gold/id6504749605"> <img src="https://developer.apple.com/app-store/marketing/guidelines/images/badge-download-on-the-app-store.svg" width="120"> </a> </td> <td align="center"> <img src="https://play-lh.googleusercontent.com/l-usbpBq0OuurA1e9FJSlnnVVa1HQpcUCMv_RlM63zk7jGUvXRC10Z9hDuqA83DTU6A=w240-h480-rw" width="120" height="120"><br> <b>Ludo World War</b><br> <a href="https://play.google.com/store/apps/details?id=com.ludosimplegame.ludo_simple"> <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" width="140"> </a> </td> </tr> </table>
+⭐ Your ratings & reviews help tremendously! ⭐
 
+Help us grow and bring you more amazing features!
 
-## 🎮 Try My Games!
-
-<div align="center">
-  <h1>See this plugin in action and support my work!</h1>
-  
-  <table>
-    <tr>
-      <td align="center">
-        <img src="https://play-lh.googleusercontent.com/l-usbpBq0OuurA1e9FJSlnnVVa1HQpcUCMv_RlM63zk7jGUvXRC10Z9hDuqA83DTU6A=w240-h480-rw" width="120" height="120"><br>
-        <b>Ludo World War</b><br>
-        <a href="https://apps.apple.com/np/app/ludo-app-gold/id6504749605">
-          <img src="https://developer.apple.com/app-store/marketing/guidelines/images/badge-download-on-the-app-store.svg" width="120">
-        </a>
-      </td>
-      <td align="center">
-        <img src="https://play-lh.googleusercontent.com/l-usbpBq0OuurA1e9FJSlnnVVa1HQpcUCMv_RlM63zk7jGUvXRC10Z9hDuqA83DTU6A=w240-h480-rw" width="120" height="120"><br>
-        <b>Ludo World War</b><br>
-        <a href="https://play.google.com/store/apps/details?id=com.ludosimplegame.ludo_simple">
-          <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" width="140">
-        </a>
-      </td>
-    </tr>
-  </table>
-  
-  ⭐ **Your ratings & reviews help tremendously!** ⭐
-  
-  Help us grow and bring you more amazing features!
 </div>
-
----
-
-<p align="center">
-  Enjoy coding & gaming! 🎮🚀
-</p>
-
+<p align="center"> Enjoy coding & gaming! 🎮🚀 </p>
+This guide and documentation are now ready for public demonstration and provide a clear, step-by-step process for integrating Apple Sign-In with Firebase into Godot using Swift.
