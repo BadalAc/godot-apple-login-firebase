@@ -1,6 +1,6 @@
 <h2>Before You do any buidling just check Bin/ios/ if you have Bin/ios/MyLibrary.framework and Bin/ios/SwiftGodot.framework just copy them to dogodot skip build process</h2>
 
-# SwiftGodot Apple Sign-In Library ✨
+# Godot Apple Sign-In Library ✨
 
 <div align="center">
     <h1>SwiftGodot Apple Sign-In Library</h1>
