@@ -171,12 +171,3 @@ func show_status(message: String) -> void:
 
 
 
-🎮 Try My Games!
-<div align="center"> <h1>See this plugin in action and support my work!</h1> <table> <tr> <td align="center"> <img src="https://play-lh.googleusercontent.com/l-usbpBq0OuurA1e9FJSlnnVVa1HQpcUCMv_RlM63zk7jGUvXRC10Z9hDuqA83DTU6A=w240-h480-rw" width="120" height="120"><br> <b>Ludo World War</b><br> <a href="https://apps.apple.com/np/app/ludo-app-gold/id6504749605"> <img src="https://developer.apple.com/app-store/marketing/guidelines/images/badge-download-on-the-app-store.svg" width="120"> </a> </td> <td align="center"> <img src="https://play-lh.googleusercontent.com/l-usbpBq0OuurA1e9FJSlnnVVa1HQpcUCMv_RlM63zk7jGUvXRC10Z9hDuqA83DTU6A=w240-h480-rw" width="120" height="120"><br> <b>Ludo World War</b><br> <a href="https://play.google.com/store/apps/details?id=com.ludosimplegame.ludo_simple"> <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" width="140"> </a> </td> </tr> </table>
-⭐ Your ratings & reviews help tremendously! ⭐
-
-Help us grow and bring you more amazing features!
-
-</div>
-<p align="center"> Enjoy coding & gaming! 🎮🚀 </p>
-This guide and documentation are now ready for public demonstration and provide a clear, step-by-step process for integrating Apple Sign-In with Firebase into Godot using Swift.
