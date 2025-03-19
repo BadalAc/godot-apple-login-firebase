@@ -28,59 +28,7 @@
 Create a Swift class to handle Apple Sign-In and Firebase authentication. Use **SwiftGodot** to expose methods and signals to Godot.
 
 #### Example Swift Code:
-```swift
-import Foundation
-import SwiftGodot
-import FirebaseAuth
-import AuthenticationServices
-
-@Godot
-class MyLibrary: Object {
-    private var currentNonce: String?
-
-    @Callable
-    func signIn() {
-        let nonce = randomNonceString()
-        currentNonce = nonce
-        let appleIDProvider = ASAuthorizationAppleIDProvider()
-        let request = appleIDProvider.createRequest()
-        request.requestedScopes = [.fullName, .email]
-        request.nonce = sha256(nonce)
-
-        let authorizationController = ASAuthorizationController(authorizationRequests: [request])
-        authorizationController.delegate = self
-        authorizationController.performRequests()
-    }
-
-    @Callable
-    func signOut() {
-        do {
-            try Auth.auth().signOut()
-            emitSignal("Signout", "User signed out")
-        } catch {
-            emitSignal("Output", "Error: \(error.localizedDescription)")
-        }
-    }
-
-    private func randomNonceString(length: Int = 32) -> String {
-        // Generate a random nonce string
-    }
-
-    private func sha256(_ input: String) -> String {
-        // Compute SHA256 hash
-    }
-}
-
-extension MyLibrary: ASAuthorizationControllerDelegate {
-    func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
-        // Handle Apple Sign-In success
-    }
-    
-    func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
-        // Handle Apple Sign-In error
-    }
-}
-```
+ALREADY DID IT FOR YOU
 
 ---
 
